@@ -58,7 +58,7 @@ module Controls =
         override this.InitLayout () =
             base.InitLayout ()
 
-        override this.GetPreferredSize (proposedSize : Size) = 
+        override this.GetPreferredSize (proposedSize : Size) =
             base.GetPreferredSize proposedSize
 
         override this.OnLayout le =

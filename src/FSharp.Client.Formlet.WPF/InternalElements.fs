@@ -363,10 +363,10 @@ module internal InternalElements =
     type FormletElement () =
         inherit LayoutElement ()
 
-        member val FormletTree : FormletTree<UIElement> = Empty with get,set 
+        member val FormletTree : FormletTree<UIElement> = Empty with get,set
 
     type AdornersAdapter(adorners : ObservableCollection<FormletElement>) =
-        
+
         let enumerator : seq<IList<UIElement>*FormletTree<UIElement>> =
             seq {
                 for adorner in adorners do
@@ -377,7 +377,7 @@ module internal InternalElements =
             member this.Count       = adorners.Count
 
             member this.Item
-                with get(index)     = 
+                with get(index)     =
                     let adorner = adorners.[index]
                     adorner.ChildCollection, adorner.FormletTree
 
@@ -393,7 +393,7 @@ module internal InternalElements =
 
         let adorners    = ObservableCollection<FormletElement> ()
         let adapter     = AdornersAdapter adorners
-        
+
         let addNew ()   = adorners.Add (FormletElement ())
 
         do
@@ -408,11 +408,13 @@ module internal InternalElements =
 
         member this.Adorners                = adapter
 
-        member this.CanAddNew ()            = true 
-        member this.AddNew ()               = addNew ()
+        member this.CanAddNew ()            = true
+        member this.AddNew ()               =
+            addNew ()
+            this.ChangeNotifier ()
 
         member this.CanDeleteSelection ()   = this.SelectedItems.Count > 0
-        member this.DeleteSelection ()      = 
+        member this.DeleteSelection ()      =
             let selectedItems = this.SelectedItems
             let selection = Array.zeroCreate selectedItems.Count
             for i = 0 to selectedItems.Count - 1 do
@@ -460,7 +462,7 @@ module internal InternalElements =
 
         member this.ChildCollection = adorners
 
-        member this.ChangeNotifier 
+        member this.ChangeNotifier
             with get () = listBox.ChangeNotifier
             and  set c  = listBox.ChangeNotifier <- c
 
