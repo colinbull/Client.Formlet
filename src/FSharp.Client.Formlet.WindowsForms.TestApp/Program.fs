@@ -48,6 +48,7 @@ module Main =
         let formletControl = new FormletControl<_> (submit, person)
 
         form.Controls.Add (formletControl)
+        form.Controls.Add (null);
 
         ignore <| form.ShowDialog ();
 

@@ -55,13 +55,11 @@ module internal InternalElements =
                 let p = Point ((rs.Width - formattedText.Width) / 2.0, (rs.Height - formattedText.Height) / 2.0)
                 drawingContext.DrawText (formattedText, p)
 
-    type ContainerElement () as this =
+    type LayoutElement () as this =
         inherit FormletElement ()
 
         let mutable vertical            = true
         let mutable expandLast          = true
-        let mutable duplicateDetector   = HashSet<UIElement> ()
-        let mutable existing            = HashSet<UIElement> ()
 
         let children                    = ResizeArray<UIElement>()
 
@@ -190,7 +188,7 @@ module internal InternalElements =
 
     // TODO: Make label text selectable, using TextBox is an easy way to do this.
     type LabelElement (labelWidth : double) as this =
-        inherit ContainerElement ()
+        inherit LayoutElement ()
 
         let mutable formattedText   = FormatText "Label" DefaultTypeFace 12. DefaultForegroundBrush
         let origin = Point(2.,4.)
@@ -310,45 +308,71 @@ module internal InternalElements =
 
                 this.ChangeNotifier ()
 
-    // TODO: Raise ChangeNotification on changes
-    type ManyElement(value : StackPanel) as this =
+    let CreateManyElements canExecuteNew executeNew canExecuteDelete executeDelete : ListBox*IList<IList<UIElement>*FormletTree<UIElement>>*Panel*Button*Button =
+        let buttons         = CreateStackPanel Orientation.Horizontal
+        let newButton       = CreateButton "_New" "Click to create another item" canExecuteNew executeNew
+        let deleteButton    = CreateButton "_Delete" "Click to delete the currently selected items" canExecuteDelete executeDelete
+        ignore <| buttons.Children.Add newButton
+        ignore <| buttons.Children.Add deleteButton
+        let listBox         = CreateListBox ()
+        let adorners        = ObservableCollection<IList<UIElement>*FormletTree<UIElement>> ()
+        listBox.ItemsSource <- adorners
+        listBox, upcast adorners, upcast buttons, newButton, deleteButton
+
+    type ManyElement(initialCount : int, value : StackPanel) as this =
         inherit DecoratorElement(value)
 
-        let inner = ObservableCollection<UIElement> ()
-        let listBox, buttons, newButton, deleteButton = CreateManyElements this.CanExecuteNew this.ExecuteNew this.CanExecuteDelete this.ExecuteDelete
+        let listBox, adorners, buttons, newButton, deleteButton = CreateManyElements this.CanExecuteNew this.ExecuteNew this.CanExecuteDelete this.ExecuteDelete
 
         do
-            listBox.ItemsSource <- inner
             ignore <| value.Children.Add buttons
             ignore <| value.Children.Add listBox
 
-        new () =
-            ManyElement (CreateStackPanel Orientation.Vertical)
+        new (initialCount : int) =
+            ManyElement (initialCount, CreateStackPanel Orientation.Vertical)
 
         member val ChangeNotifier = EmptyChangeNotification with get, set
 
-        member this.ExecuteNew ()   =   inner.Add null
+        member this.ExecuteNew ()   =   //adorners.Add null     // TODO: 
                                         this.ChangeNotifier ()
+
         member this.CanExecuteNew ()=   true
 
         member this.ExecuteDelete ()=   let selectedItems = listBox.SelectedItems
-                                        let selection = Array.create selectedItems.Count (null :> UIElement)
-                                        for i in 0..selectedItems.Count - 1 do
-                                            selection.[i] <- selectedItems.[i] :?> UIElement
+                                        let selection = Array.zeroCreate selectedItems.Count
+                                        for i = 0 to selectedItems.Count - 1 do
+                                            selection.[i] <- selectedItems.IndexOf selectedItems.[i]
 
-                                        for i in selectedItems.Count - 1..-1..0 do
-                                            ignore <| inner.Remove(selection.[i])
+                                        Array.Sort selection
+
+                                        for i = selection.Length - 1 downto 0 do
+                                            ignore <| adorners.RemoveAt (selection.[i])
 
                                         this.ChangeNotifier ()
 
         member this.CanExecuteDelete () = listBox.SelectedItems.Count > 0
 
-        member this.ChildCollection = inner
+        member this.ChildCollection = adorners
+
+    let CreateLegendElements t : UIElement*TextBox*Decorator =
+        let label               = CreateLabelTextBox t
+        label.Background        <- DefaultBackgroundBrush
+        label.RenderTransform   <- TranslateTransform (8.0, -6.0)
+        label.FontSize          <- 16.0
+        let border              = Border ()
+        let outer               = Grid ()
+        border.Margin           <- DefaultBorderMargin
+        border.Padding          <- DefaultBorderPadding
+        border.BorderThickness  <- DefaultBorderThickness
+        border.BorderBrush      <- DefaultBorderBrush
+        ignore <| outer.Children.Add(border)
+        ignore <| outer.Children.Add(label)
+        upcast outer, label, upcast border
 
     type LegendElement(outer : UIElement, label : TextBox, inner : Decorator) =
         inherit DecoratorElement(outer)
 
-        let container   = ContainerElement ()
+        let container   = LayoutElement ()
 
         do
             inner.Child <- container
@@ -378,7 +402,7 @@ module internal InternalElements =
         let symbolSize  = 48.0
         let largeSize   = 24.0
 
-        let container   = ContainerElement ()
+        let container   = LayoutElement ()
         let border      = Border ()
         let grid        = Grid ()
         let stackPanel  = CreateStackPanel Orientation.Vertical

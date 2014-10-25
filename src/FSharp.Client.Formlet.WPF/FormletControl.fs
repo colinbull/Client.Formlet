@@ -69,10 +69,10 @@ type FormletControl<'TValue> (scrollViewer : ScrollViewer, submit : 'TValue -> u
 
     let postProcessElements (collection : IList<UIElement>) (count : int) =
         let c = collection.Count
-        for i in (c - 1)..(-1)..count do
+        for i = c - 1 downto count do
             collection.RemoveAt i
 
-    let createContainer () = ContainerElement ()
+    let createLayout () = LayoutElement ()
 
     let rec buildTree (collection : IList<UIElement>) (position : int) (fl : FormletLayout) (ft : FormletTree<UIElement>) : int =
         let current = getElement collection position
@@ -90,29 +90,26 @@ type FormletControl<'TValue> (scrollViewer : ScrollViewer, submit : 'TValue -> u
             postProcessElements ls c
             setElement collection position e
             1
-(* TODO:
-        | Many (e, ls, fts) ->
-            let mutable c = 0
-            let mutable i = 0
-            for ft in fts do
-                c <- c + buildTree ls i fl ft
-                i <- i + 1
-            postProcessElements ls c
+        | Many (e, adorners) ->
+            let c = adorners.Count
+            for i = 0 to c - 1 do
+                let ls,ft   = adorners.[i]
+                let c       = buildTree ls 0 fl ft
+                postProcessElements ls c
             setElement collection position e
             1
-*)
         | Layout (l, ft)        ->
             let nl = fl.Union l
             if nl = fl then
                 buildTree collection position fl ft
             else
-                let con = CreateElement current createContainer
-                con.Orientation <- fl.Orientation
+                let lay         = CreateElement current createLayout
+                lay.Orientation <- fl.Orientation
 
-                let ls  = con.ChildCollection
-                let c   = buildTree ls 0 fl ft
+                let ls          = lay.ChildCollection
+                let c           = buildTree ls 0 fl ft
                 postProcessElements ls c
-                setElement collection position con
+                setElement collection position lay
                 1
         | Fork (l,r)            ->
             let lcount = buildTree collection position fl l
@@ -161,14 +158,14 @@ type FormletControl<'TValue> (scrollViewer : ScrollViewer, submit : 'TValue -> u
     member this.BuildForm () =
         let _,ft= this.Evaluate ()
         let cft = FormletTree.Layout (layout, ft)
-        let con = CreateElement scrollViewer.Content createContainer
+        let lay = CreateElement scrollViewer.Content createLayout
 
         // TODO: Defer updates
 
-        let ls  = con.ChildCollection
+        let ls  = lay.ChildCollection
         let c   = buildTree ls 0 layout cft
         postProcessElements ls c
 
-        scrollViewer.Content <- con
+        scrollViewer.Content <- lay
 
         ()

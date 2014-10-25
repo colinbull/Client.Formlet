@@ -92,32 +92,35 @@ module Input =
 
 module Enhance =
 
-(*
     let Many (initialCount : int) (f : Formlet<FormletContext, UIElement, 'T>) : Formlet<FormletContext, UIElement, 'T[]> =
         let eval (fc,cl,ft : FormletTree<UIElement>) =
-            let (me, list, ifts) =
+            let me, adorners =
                 match ft with
-                | Adorner ((:? ManyElement as me), list, fts)   ->
-                    me, list, fts
+                | Many ((:? ManyElement as me), adorners)   ->
+                    me, adorners
                 | _                         ->
-                    let me  = ManyElement ()
-                    let list= me.ChildCollection
-                    me, upcast list, (Array.create initialCount Empty)
+                    let me      = ManyElement (initialCount)
+                    let adorners= me.ChildCollection
+                    me, adorners
 
             me.ChangeNotifier <- cl
 
-            let cs, nifts = ifts |> Array.map (fun ift -> f.Evaluate (fc, cl, ift)) |> Array.unzip
+            let c       = Array.zeroCreate adorners.Count
+            let fs      = ResizeArray<_> ()
 
-            let c   = Array.zeroCreate cs.Length
-            let fs  = ResizeArray<_> ()
-            for i in 0..cs.Length-1 do
-                c.[i] <- cs.[i].Value
-                fs.AddRange cs.[i].Failures
+            let count   = adorners.Count
+            for i = 0 to count - 1 do
+                let ls, ift  = adorners.[i]
+                // TODO: Set nift
+                let ic, nift    = f.Evaluate (fc, cl, ift)
+                adorners.[i]    <- (ls, nift)
+                c.[i] <- ic.Value
+                fs.AddRange ic.Failures
 
-            FormletResult.New c (fs |> Seq.toList), Adorner (me :> UIElement, list, nifts)
+            FormletResult.New c (fs |> Seq.toList), Many (me :> UIElement, me.ChildCollection)
 
-        Formlet.New eval
-*)
+        Formlet<_,_,_>.New eval
+
     let WithLabel (l : string) (f : Formlet<FormletContext, UIElement, 'T>) : Formlet<FormletContext, UIElement, 'T> =
         let eval (fc,cl,ft : FormletTree<UIElement>) =
             let (le, list, ift) =

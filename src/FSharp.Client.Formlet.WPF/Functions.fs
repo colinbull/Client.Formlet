@@ -19,6 +19,7 @@ namespace FSharp.Client.Formlet.WPF
 open System
 open System.Collections
 open System.Collections.Generic
+open System.Collections.ObjectModel
 open System.Threading
 open System.Windows
 open System.Windows.Controls
@@ -431,30 +432,6 @@ module internal Functions =
         label.VerticalAlignment     <- VerticalAlignment.Top
         label.HorizontalAlignment   <- HorizontalAlignment.Left
         label
-
-    let CreateManyElements canExecuteNew executeNew canExecuteDelete executeDelete : ListBox*Panel*Button*Button =
-        let buttons         = CreateStackPanel Orientation.Horizontal
-        let newButton       = CreateButton "_New" "Click to create another item" canExecuteNew executeNew
-        let deleteButton    = CreateButton "_Delete" "Click to delete the currently selected items" canExecuteDelete executeDelete
-        ignore <| buttons.Children.Add newButton
-        ignore <| buttons.Children.Add deleteButton
-        let listBox         = CreateListBox ()
-        listBox, upcast buttons, newButton, deleteButton
-
-    let CreateLegendElements t : UIElement*TextBox*Decorator =
-        let label               = CreateLabelTextBox t
-        label.Background        <- DefaultBackgroundBrush
-        label.RenderTransform   <- TranslateTransform (8.0, -6.0)
-        label.FontSize          <- 16.0
-        let border              = Border ()
-        let outer               = Grid ()
-        border.Margin           <- DefaultBorderMargin
-        border.Padding          <- DefaultBorderPadding
-        border.BorderThickness  <- DefaultBorderThickness
-        border.BorderBrush      <- DefaultBorderBrush
-        ignore <| outer.Children.Add(border)
-        ignore <| outer.Children.Add(label)
-        upcast outer, label, upcast border
 
     type SingleDispatchQueue<'DispatchEnum when 'DispatchEnum : enum<int32> and 'DispatchEnum : equality> (dispatcher : Dispatcher) =
         let mutable isDispatching   = false

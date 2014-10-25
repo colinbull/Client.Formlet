@@ -16,6 +16,10 @@
 
 namespace FSharp.Client.Formlet.WindowsForms
 
+open System
+open System.Collections
+open System.Collections.Generic
+open System.Drawing
 open System.Windows.Forms
 
 open FSharp.Client.Formlet.Core
@@ -23,6 +27,42 @@ open FSharp.Client.Formlet.Core
 module Controls =
 
     let EmptyChangeNotification : FormletChangeNotification = fun () -> ()
+
+    type LayoutControl () as this =
+        inherit Control ()
+
+        let mutable vertical            = true
+        let mutable expandLast          = true
+
+        let invalidate () =
+            this.Invalidate ()
+
+        member this.Orientation
+            with get ()     =
+                if vertical then TopToBottom
+                else LeftToRight
+            and  set o      =
+                match vertical, o with
+                | false, TopToBottom
+                | true , LeftToRight    -> vertical <- o = TopToBottom; invalidate ()
+                | _                     -> ()
+
+        member this.ExpandLast
+            with get ()     = expandLast
+            and  set e      =
+                match expandLast, e with
+                | false, true
+                | true , false      -> vertical <- e; invalidate ()
+                | _    , _          -> ()
+
+        override this.InitLayout () =
+            base.InitLayout ()
+
+        override this.GetPreferredSize (proposedSize : Size) = 
+            base.GetPreferredSize proposedSize
+
+        override this.OnLayout le =
+            base.OnLayout le
 
     type InputTextControl(initialText : string) as this =
         inherit TextBox()
