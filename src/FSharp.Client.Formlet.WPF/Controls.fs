@@ -121,7 +121,7 @@ module internal Controls =
             member this.GetEnumerator ()    = children.GetEnumerator () :> IEnumerator<UIElement>
             member this.GetEnumerator()     = children.GetEnumerator () :> IEnumerator
 
-        member x.Orientation
+        member this.Orientation
             with get ()     =
                 if vertical then TopToBottom
                 else LeftToRight
@@ -131,7 +131,7 @@ module internal Controls =
                 | true , LeftToRight    -> vertical <- o = TopToBottom; invalidate ()
                 | _                     -> ()
 
-        member x.ExpandLast
+        member this.ExpandLast
             with get ()     = expandLast
             and  set e      =
                 match expandLast, e with
@@ -274,7 +274,7 @@ module internal Controls =
     type InputOptionElement<'T>(initial : int, options : (string * 'T) []) as this =
         inherit ComboBox()
 
-        let itemSource              = new ObservableCollection<ComboBoxItem> ()
+        let itemSource              = ObservableCollection<ComboBoxItem> ()
         let mutable selectedIndex   = -1
 
         do
@@ -283,9 +283,9 @@ module internal Controls =
 
             for i in 0..options.Length - 1 do
                 let t,_     = options.[i]
-                let tb      = new TextBlock ()
+                let tb      = TextBlock ()
                 tb.Text     <- t
-                let cbi     = new ComboBoxItem ()
+                let cbi     = ComboBoxItem ()
                 cbi.Content <- tb
                 itemSource.Add (cbi)
 
@@ -323,7 +323,7 @@ module internal Controls =
             ignore <| value.Children.Add listBox
 
         new () =
-            new ManyElement (CreateStackPanel Orientation.Vertical)
+            ManyElement (CreateStackPanel Orientation.Vertical)
 
         member val ChangeNotifier = EmptyChangeNotification with get, set
 
@@ -348,14 +348,14 @@ module internal Controls =
     type LegendElement(outer : UIElement, label : TextBox, inner : Decorator) =
         inherit DecoratorElement(outer)
 
-        let container   = new ContainerElement ()
+        let container   = ContainerElement ()
 
         do
             inner.Child <- container
 
         new () =
             let outer, label, inner = CreateLegendElements "Group"
-            new LegendElement (outer, label, inner)
+            LegendElement (outer, label, inner)
 
         member this.Text
             with get ()                     = label.Text
@@ -378,25 +378,24 @@ module internal Controls =
         let symbolSize  = 48.0
         let largeSize   = 24.0
 
-        let container   = new ContainerElement ()
-        let border      = new Border ()
-        let grid        = new Grid ()
+        let container   = ContainerElement ()
+        let border      = Border ()
+        let grid        = Grid ()
         let stackPanel  = CreateStackPanel Orientation.Vertical
 
         let submitButton= CreateButton "_Submit" "Click to submit form" this.CanSubmit this.Submit
         let resetButton = CreateButton "_Reset" "Click to reset form"   this.CanReset this.Reset
 
-        let errorSymbol = new SymbolElement (   [|
-                                                    ("\u26CA", symbolSize       , errorSymbolBackgroundBrush, SymbolTypeFace    )
-                                                    ("\u26C9", symbolSize       , DefaultBackgroundBrush    , SymbolTypeFace    )
-                                                    ("\u2757", symbolSize / 2.0 , DefaultBackgroundBrush    , SymbolTypeFace    )
-                                                |]
-                                                )
-        let okSymbol    = new SymbolElement (   [|
-                                                    ("\u26CA", symbolSize       , okSymbolBackgroundBrush   , SymbolTypeFace    )
-                                                    ("\u26C9", symbolSize       , DefaultBackgroundBrush    , SymbolTypeFace    )
-                                                    ("\u2714", symbolSize / 2.0 , DefaultBackgroundBrush    , SymbolTypeFace    )
-                                                |])
+        let errorSymbol = SymbolElement ([|
+                                            ("\u26CA", symbolSize       , errorSymbolBackgroundBrush, SymbolTypeFace    )
+                                            ("\u26C9", symbolSize       , DefaultBackgroundBrush    , SymbolTypeFace    )
+                                            ("\u2757", symbolSize / 2.0 , DefaultBackgroundBrush    , SymbolTypeFace    )
+                                        |])
+        let okSymbol    = SymbolElement ([|
+                                            ("\u26CA", symbolSize       , okSymbolBackgroundBrush   , SymbolTypeFace    )
+                                            ("\u26C9", symbolSize       , DefaultBackgroundBrush    , SymbolTypeFace    )
+                                            ("\u2714", symbolSize / 2.0 , DefaultBackgroundBrush    , SymbolTypeFace    )
+                                        |])
         let label = CreateTextBlock ""
 
         let mutable failures = []
@@ -455,18 +454,18 @@ module internal Controls =
                             failures
                             |>  List.collect (fun f ->
                                 [
-                                    new Run (" § ")             :> Inline
-                                    new Run (f.FailureContext   |> LastOrDefault "No context"   )
+                                    Run (" § ")             :> Inline
+                                    Run (f.FailureContext   |> LastOrDefault "No context"   )
                                                                 :> Inline
-                                    new Run (" - ")             :> Inline
-                                    new Run (f.Message)         :> Inline
-                                    new LineBreak()             :> Inline
+                                    Run (" - ")             :> Inline
+                                    Run (f.Message)         :> Inline
+                                    LineBreak()             :> Inline
                                 ])
                         let full =
                             [
-                                new Run ("You can't submit because")    |?> (fun r -> r.FontSize <- largeSize)
+                                Run ("You can't submit because")    |?> (fun r -> r.FontSize <- largeSize)
                                                                         :> Inline
-                                new LineBreak()                         :> Inline
+                                LineBreak()                         :> Inline
                             ]
                             @ inlines
                         full |>  List.toArray
@@ -476,9 +475,9 @@ module internal Controls =
                         border.Background       <- okBackgroundBrush
                         border.BorderBrush      <- okBorderBrush
                         [|
-                                new Run ("Ready to submit")     |?> (fun r -> r.FontSize <- largeSize)
+                                Run ("Ready to submit")     |?> (fun r -> r.FontSize <- largeSize)
                                                                 :> Inline
-                                new LineBreak()                 :> Inline
+                                LineBreak()                 :> Inline
                         |]
                 label.Inlines.AddRange (inlines)
                 if label.Inlines.Count = 0 then

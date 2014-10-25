@@ -31,8 +31,8 @@ type FormletDispatchAction =
 
 type FormletContext () =
     interface IFormletContext with
-        member x.PushTag tag            = ()
-        member x.PopTag ()              = ()
+        member this.PushTag tag     = ()
+        member this.PopTag ()       = ()
 
 type FormletControl<'TValue> (scrollViewer : ScrollViewer, submit : 'TValue -> unit, formlet : Formlet<FormletContext, UIElement, 'TValue>) as this =
     inherit DecoratorElement (scrollViewer)
@@ -71,7 +71,7 @@ type FormletControl<'TValue> (scrollViewer : ScrollViewer, submit : 'TValue -> u
         for i in (c - 1)..(-1)..count do
             collection.RemoveAt i
 
-    let createContainer () = new ContainerElement ()
+    let createContainer () = ContainerElement ()
 
     let rec buildTree (collection : IList<UIElement>) (position : int) (fl : FormletLayout) (ft : FormletTree<UIElement>) : int =
         let current = getElement collection position
@@ -130,7 +130,7 @@ type FormletControl<'TValue> (scrollViewer : ScrollViewer, submit : 'TValue -> u
     let cacheInvalidator () = queue.Dispatch (FormletDispatchAction.Rebuild  , this.BuildForm)
 
     new (submit : 'TValue -> unit, formlet : Formlet<FormletContext, UIElement, 'TValue>) =
-        let scrollViewer = new ScrollViewer ()
+        let scrollViewer = ScrollViewer ()
         FormletControl (scrollViewer, submit, formlet)
 
     member this.OnSubmit    (sender : obj) (e : RoutedEventArgs) = queue.Dispatch (FormletDispatchAction.Submit   , this.SubmitForm)

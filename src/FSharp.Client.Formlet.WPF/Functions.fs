@@ -42,7 +42,7 @@ module internal Functions =
         EventManager.RegisterRoutedEvent (name + "Event", RoutingStrategy.Bubble, typeof<RoutedEventHandler>, typeof<'TOwner>)
 
     let RaiseRoutedEvent routedEvent (sender : UIElement) =
-        let args = new RoutedEventArgs (routedEvent, sender)
+        let args = RoutedEventArgs (routedEvent, sender)
         sender.RaiseEvent args
 
     let AddRoutedEventHandler routedEvent (receiver : UIElement) (h : obj -> RoutedEventArgs -> unit) =
@@ -69,8 +69,8 @@ module internal Functions =
         |   [v]         -> v
         |   _::vs       -> LastOrDefault defaultTo vs
 
-    let EmptySize = new Size ()
-    let EmptyRect = new Rect ()
+    let EmptySize = Size ()
+    let EmptyRect = Rect ()
 
     let Arrange (vertical : bool, expand : bool, sz : Size, l : Rect, r : Size) : Rect =
         match expand,vertical with
@@ -190,7 +190,7 @@ module internal Functions =
         | _ -> Colors.Red
 
     let CreateBrush color =
-        let br = new SolidColorBrush (color)
+        let br = SolidColorBrush (color)
         br.Freeze ()
         br
 
@@ -221,7 +221,7 @@ module internal Functions =
         grid
 
     let CreatePen br th =
-        let p = new Pen (br, th)
+        let p = Pen (br, th)
         p.Freeze ()
         p
 
@@ -295,7 +295,7 @@ module internal Functions =
 
     let AppendErrorAdornerUpdater (fe : FrameworkElement, layer : AdornerLayer, adorner : ErrorVisualAdorner) =
         match adorner with
-        | null  -> layer.Add (new ErrorVisualAdorner (fe))
+        | null  -> layer.Add (ErrorVisualAdorner (fe))
         | _     -> ()
 
     let AppendErrorAdorner (e : UIElement) : unit =
@@ -310,7 +310,7 @@ module internal Functions =
         UpdateAdorner RemoveErrorAdornerUpdater e
 
     type Command(canExecute : unit -> bool, execute : unit -> unit) =
-        let canExecuteChanged           = new Event<EventHandler, EventArgs> ()
+        let canExecuteChanged   = Event<EventHandler, EventArgs> ()
 
         interface ICommand with
 
@@ -378,11 +378,10 @@ module internal Functions =
         do
             this.AlternationCount <- Int32.MaxValue
 
-        override this.GetContainerForItemOverride () =
-            new FormListBoxItem () :> DependencyObject
+        override this.GetContainerForItemOverride () = FormListBoxItem () :> DependencyObject
 
     let CreateListBox () =
-        let listBox             = new FormListBox() :> ListBox
+        let listBox             = FormListBox() :> ListBox
         listBox.Margin          <- DefaultMargin
         listBox.SelectionMode   <- SelectionMode.Extended
         listBox.MinHeight       <- 24.0
@@ -392,12 +391,12 @@ module internal Functions =
         listBox
 
     let CreateStackPanel orientation =
-        let stackPanel = new StackPanel()
+        let stackPanel = StackPanel()
         stackPanel.Orientation <- orientation
         stackPanel
 
     let CreateButton t toolTip canExecute execute =
-        let button      = new Button()
+        let button      = Button()
         button.ToolTip  <- toolTip
         button.Content  <- t
         button.Margin   <- DefaultMargin
@@ -411,14 +410,14 @@ module internal Functions =
         button
 
     let CreateTextBlock t =
-        let textBlock   = new TextBlock ()
+        let textBlock   = TextBlock ()
         textBlock.Text  <- t
         textBlock.Margin<- DefaultMargin
         textBlock
 
 
     let CreateTextBox t =
-        let textBox     = new TextBox ()
+        let textBox     = TextBox ()
         textBox.Text    <- t
         textBox.Margin  <- DefaultMargin
         textBox
@@ -428,7 +427,7 @@ module internal Functions =
         label.IsReadOnly            <- true
         label.IsTabStop             <- false
         label.Background            <- Brushes.Transparent
-        label.BorderThickness       <- new Thickness 0.0
+        label.BorderThickness       <- Thickness 0.0
         label.VerticalAlignment     <- VerticalAlignment.Top
         label.HorizontalAlignment   <- HorizontalAlignment.Left
         label
@@ -445,10 +444,10 @@ module internal Functions =
     let CreateLegendElements t : UIElement*TextBox*Decorator =
         let label               = CreateLabelTextBox t
         label.Background        <- DefaultBackgroundBrush
-        label.RenderTransform   <- new TranslateTransform (8.0, -6.0)
+        label.RenderTransform   <- TranslateTransform (8.0, -6.0)
         label.FontSize          <- 16.0
-        let border              = new Border ()
-        let outer               = new Grid ()
+        let border              = Border ()
+        let outer               = Grid ()
         border.Margin           <- DefaultBorderMargin
         border.Padding          <- DefaultBorderPadding
         border.BorderThickness  <- DefaultBorderThickness
@@ -461,14 +460,14 @@ module internal Functions =
         let mutable isDispatching   = false
         let queue                   = Queue<'DispatchEnum*(unit->unit)> ()
 
-        member x.Dispatch (dispatchEnum : 'DispatchEnum, action : unit->unit) =
+        member this.Dispatch (dispatchEnum : 'DispatchEnum, action : unit->unit) =
             dispatcher.VerifyAccess ()
             let isAlreadyDispatching = queue |> Seq.exists (fun (de,_) -> de = dispatchEnum)
             if not isAlreadyDispatching then
                 queue.Enqueue(dispatchEnum, action)
-                x.StartDispatchIfNecessary ()
+                this.StartDispatchIfNecessary ()
 
-        member private x.StartDispatchIfNecessary () =
+        member private this.StartDispatchIfNecessary () =
             if not isDispatching && queue.Count > 0 then
                 isDispatching <- true
                 let _,action = queue.Peek ()
@@ -478,7 +477,7 @@ module internal Functions =
                     finally
                         ignore <| queue.Dequeue ()
                         isDispatching <- false
-                        x.StartDispatchIfNecessary ()
+                        this.StartDispatchIfNecessary ()
 
 
 

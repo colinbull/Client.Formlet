@@ -37,19 +37,19 @@ type FormletCache<'T>() =
     let mutable value   = Unchecked.defaultof<'T>
 
     interface IFormletCache with
-        member x.Clear () = x.Clear ()
+        member this.Clear () = this.Clear ()
 
-    member x.Clear () =
+    member this.Clear () =
         hasValue    <- false
         value       <- Unchecked.defaultof<'T>
 
-    member x.Set (v : 'T) =
+    member this.Set (v : 'T) =
         hasValue    <- true
         value       <- v
 
-    member x.HasValue   = hasValue
+    member this.HasValue   = hasValue
 
-    member x.Value      = value
+    member this.Value      = value
 
 type FormletOrientation =
     | Parent
@@ -122,7 +122,7 @@ type FormletFailure =
     }
     static member New (failureContext : string list) (message : string) = { FailureContext = failureContext; Message = message; }
 
-    member x.AddContext (context : string) = FormletFailure.New (context::x.FailureContext) x.Message
+    member this.AddContext (context : string) = FormletFailure.New (context::this.FailureContext) this.Message
 
 /// FormletResult is the result when evaluating a Formlet over a FormTree
 ///  It contains a potential value and potential failures
@@ -136,21 +136,21 @@ type FormletResult<'T> =
     static member Failure   (failures : FormletFailure list) = FormletResult.New Unchecked.defaultof<_> failures
     static member FailWith  (failure : string) = FormletResult<_>.Failure [FormletFailure.New [] failure]
 
-    member x.HasFailures = not x.Failures.IsEmpty
+    member this.HasFailures = not this.Failures.IsEmpty
 
-    member x.AddFailure (formfailure : FormletFailure) = FormletResult.New x.Value (formfailure::x.Failures)
+    member this.AddFailure (formfailure : FormletFailure) = FormletResult.New this.Value (formfailure::this.Failures)
 
-    member x.AddFailures (formfailures : FormletFailure list) =
-        if formfailures.IsEmpty then x
-        else FormletResult.New x.Value (x.Failures @ formfailures)
+    member this.AddFailures (formfailures : FormletFailure list) =
+        if formfailures.IsEmpty then this
+        else FormletResult.New this.Value (this.Failures @ formfailures)
 
-    member x.AddContext (context : string) =
-        if x.Failures.IsEmpty then x
+    member this.AddContext (context : string) =
+        if this.Failures.IsEmpty then this
         else
             let failures =
-                x.Failures
+                this.Failures
                 |> List.map (fun ff -> ff.AddContext context)
-            FormletResult.New x.Value failures
+            FormletResult.New this.Value failures
 
 type FormletChangeNotification = unit -> unit
 

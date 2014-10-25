@@ -31,7 +31,7 @@ module Input =
                 match ft with
                 | Element (:? InputTextElement as e)-> e
                 | _                                 ->
-                    new InputTextElement(initialText)
+                    InputTextElement(initialText)
             e.ChangeNotifier <- cl
             (FormletResult.Success e.Text), Element (e :> UIElement)
 
@@ -57,7 +57,7 @@ module Input =
                 match ft with
                 | Element (:? InputDateTimeElement as e)-> e
                 | _                                 ->
-                    new InputDateTimeElement(initialDateTime)
+                    InputDateTimeElement(initialDateTime)
             e.ChangeNotifier <- cl
 
             let dt = e.DateTime
@@ -76,7 +76,7 @@ module Input =
                 match ft with
                 | Element (:? InputOptionElement<'T> as e)-> e
                 | _                                 ->
-                    new InputOptionElement<'T> (initial, options)
+                    InputOptionElement<'T> (initial, options)
             e.ChangeNotifier <- cl
 
             let option = e.SelectedOption
