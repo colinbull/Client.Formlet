@@ -30,7 +30,7 @@ open FSharp.Client.Formlet.Core
 
 open Elements
 
-module internal Controls =
+module internal InternalElements =
 
     type SymbolElement(layers : (string*double*Brush*Typeface) array) =
         inherit FrameworkElement()
@@ -109,7 +109,7 @@ module internal Controls =
                 invalidate ()
 
             member this.Item
-                with get(index)         = children.[index]
+                with get(index)     = children.[index]
                 and  set(index)(e)  =
                     let existing = get index
                     if not (Object.ReferenceEquals (existing, e)) then

@@ -21,7 +21,7 @@ open System.Windows
 
 open FSharp.Client.Formlet.Core
 
-open Controls
+open InternalElements
 
 module Input =
 

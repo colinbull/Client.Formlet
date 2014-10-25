@@ -18,11 +18,12 @@ namespace FSharp.Client.Formlet.WPF
 
 open System.Collections.Generic
 open System.Windows
+open System.Windows.Controls
 
 open FSharp.Client.Formlet.Core
 
 open Elements
-open Controls
+open InternalElements
 
 type FormletDispatchAction =
     | Rebuild   = 1
