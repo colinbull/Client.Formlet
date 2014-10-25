@@ -308,21 +308,148 @@ module internal InternalElements =
 
                 this.ChangeNotifier ()
 
-    let CreateManyElements canExecuteNew executeNew canExecuteDelete executeDelete : ListBox*IList<IList<UIElement>*FormletTree<UIElement>>*Panel*Button*Button =
+    type FormletListBoxItem () as this =
+        inherit ListBoxItem ()
+
+        static let pen      = CreatePen DefaultBorderBrush 1.0
+        static let typeFace = DefaultTypeFace
+
+        static let transform =
+            let transform = Matrix.Identity
+            transform.Rotate 90.0
+            transform.Translate (DefaultListBoxItemPadding.Left + 5.0, 4.0)
+            MatrixTransform (transform)
+
+        let mutable formattedText = Unchecked.defaultof<FormattedText>
+        let mutable lastIndex = -1
+
+        do
+            this.HorizontalContentAlignment <- HorizontalAlignment.Stretch
+            this.Padding <- DefaultListBoxItemPadding
+
+        override this.OnPropertyChanged (e) =
+            base.OnPropertyChanged e
+            if e.Property = ListBox.AlternationIndexProperty then
+                this.InvalidateVisual ()
+
+        override this.OnRender (drawingContext) =
+
+            let index = ListBox.GetAlternationIndex (this)
+            if index <> lastIndex || formattedText = null then
+                let text  = (index + 1).ToString("000", DefaultCulture)
+                formattedText <- FormatText
+                    text
+                    typeFace
+                    24.0
+                    DefaultBackgroundBrush
+                lastIndex <- index
+
+            let rs = this.RenderSize
+
+            let rect = Rect (0.0, 0.0, this.Padding.Left, rs.Height)
+
+            drawingContext.DrawRectangle (DefaultBorderBrush, null, rect)
+
+            let p0 = Point (0.0, rs.Height)
+            let p1 = Point (rs.Width, rs.Height)
+            drawingContext.DrawLine (pen, p0, p1)
+
+            drawingContext.PushTransform transform
+
+            drawingContext.DrawText (formattedText, Point (0.0, 0.0))
+
+            drawingContext.Pop ()
+
+    type FormletElement () =
+        inherit LayoutElement ()
+
+        member val FormletTree : FormletTree<UIElement> = Empty with get,set 
+
+    type AdornersAdapter(adorners : ObservableCollection<FormletElement>) =
+        
+        let enumerator : seq<IList<UIElement>*FormletTree<UIElement>> =
+            seq {
+                for adorner in adorners do
+                    yield adorner.ChildCollection, adorner.FormletTree
+            }
+
+        interface IReadOnlyList<IList<UIElement>*FormletTree<UIElement>> with
+            member this.Count       = adorners.Count
+
+            member this.Item
+                with get(index)     = 
+                    let adorner = adorners.[index]
+                    adorner.ChildCollection, adorner.FormletTree
+
+            member this.GetEnumerator ()    = enumerator.GetEnumerator ()
+            member this.GetEnumerator()     = enumerator.GetEnumerator () :> IEnumerator
+
+        member this.SetFormletTree (i, ft)     =
+            let adorner = adorners.[i]
+            adorner.FormletTree <- ft
+
+    type FormletListBox (initialCount : int) as this =
+        inherit ListBox ()
+
+        let adorners    = ObservableCollection<FormletElement> ()
+        let adapter     = AdornersAdapter adorners
+        
+        let addNew ()   = adorners.Add (FormletElement ())
+
+        do
+            this.AlternationCount   <- Int32.MaxValue
+            this.ItemsSource        <- adorners
+            for i = 0 to initialCount - 1 do
+                addNew ()
+
+        override this.GetContainerForItemOverride () = FormletListBoxItem () :> DependencyObject
+
+        member val ChangeNotifier = EmptyChangeNotification with get, set
+
+        member this.Adorners                = adapter
+
+        member this.CanAddNew ()            = true 
+        member this.AddNew ()               = addNew ()
+
+        member this.CanDeleteSelection ()   = this.SelectedItems.Count > 0
+        member this.DeleteSelection ()      = 
+            let selectedItems = this.SelectedItems
+            let selection = Array.zeroCreate selectedItems.Count
+            for i = 0 to selectedItems.Count - 1 do
+                selection.[i] <- selectedItems.IndexOf selectedItems.[i]
+
+            Array.Sort selection
+
+            for i = selection.Length - 1 downto 0 do
+                ignore <| adorners.RemoveAt (selection.[i])
+
+            this.ChangeNotifier ()
+
+    let CreateFormletListBox initialCount =
+        let listBox             = FormletListBox initialCount
+        listBox.Margin          <- DefaultMargin
+        listBox.SelectionMode   <- SelectionMode.Extended
+        listBox.MinHeight       <- 24.0
+        listBox.MaxHeight       <- 240.0
+        ScrollViewer.SetVerticalScrollBarVisibility(listBox, ScrollBarVisibility.Visible)
+        ScrollViewer.SetHorizontalScrollBarVisibility(listBox, ScrollBarVisibility.Disabled)
+        listBox
+
+    let CreateManyElements initialCount : FormletListBox*IReadOnlyList<IList<UIElement>*FormletTree<UIElement>>*Panel =
+        let listBox         = CreateFormletListBox initialCount
+
         let buttons         = CreateStackPanel Orientation.Horizontal
-        let newButton       = CreateButton "_New" "Click to create another item" canExecuteNew executeNew
-        let deleteButton    = CreateButton "_Delete" "Click to delete the currently selected items" canExecuteDelete executeDelete
+        // TODO: Localization
+        let newButton       = CreateButton "_New" "Click to create another item" listBox.CanAddNew listBox.AddNew
+        let deleteButton    = CreateButton "_Delete" "Click to delete the currently selected items" listBox.CanDeleteSelection listBox.DeleteSelection
         ignore <| buttons.Children.Add newButton
         ignore <| buttons.Children.Add deleteButton
-        let listBox         = CreateListBox ()
-        let adorners        = ObservableCollection<IList<UIElement>*FormletTree<UIElement>> ()
-        listBox.ItemsSource <- adorners
-        listBox, upcast adorners, upcast buttons, newButton, deleteButton
+        listBox, upcast listBox.Adorners, upcast buttons
 
-    type ManyElement(initialCount : int, value : StackPanel) as this =
+    type ManyElement(initialCount : int, value : StackPanel) =
         inherit DecoratorElement(value)
 
-        let listBox, adorners, buttons, newButton, deleteButton = CreateManyElements this.CanExecuteNew this.ExecuteNew this.CanExecuteDelete this.ExecuteDelete
+        let listBox, adorners, buttons = CreateManyElements initialCount
 
         do
             ignore <| value.Children.Add buttons
@@ -331,28 +458,11 @@ module internal InternalElements =
         new (initialCount : int) =
             ManyElement (initialCount, CreateStackPanel Orientation.Vertical)
 
-        member val ChangeNotifier = EmptyChangeNotification with get, set
-
-        member this.ExecuteNew ()   =   //adorners.Add null     // TODO: 
-                                        this.ChangeNotifier ()
-
-        member this.CanExecuteNew ()=   true
-
-        member this.ExecuteDelete ()=   let selectedItems = listBox.SelectedItems
-                                        let selection = Array.zeroCreate selectedItems.Count
-                                        for i = 0 to selectedItems.Count - 1 do
-                                            selection.[i] <- selectedItems.IndexOf selectedItems.[i]
-
-                                        Array.Sort selection
-
-                                        for i = selection.Length - 1 downto 0 do
-                                            ignore <| adorners.RemoveAt (selection.[i])
-
-                                        this.ChangeNotifier ()
-
-        member this.CanExecuteDelete () = listBox.SelectedItems.Count > 0
-
         member this.ChildCollection = adorners
+
+        member this.ChangeNotifier 
+            with get () = listBox.ChangeNotifier
+            and  set c  = listBox.ChangeNotifier <- c
 
     let CreateLegendElements t : UIElement*TextBox*Decorator =
         let label               = CreateLabelTextBox t

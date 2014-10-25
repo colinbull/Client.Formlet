@@ -99,7 +99,7 @@ type FormletTree<'Element when 'Element : not struct> =
     | Adorner   of 'Element*IList<'Element>*FormletTree<'Element>
     /// An element that represents a visual that replicates a FormLet any number of times
     ///  For instance this could be order rows in an order
-    | Many      of 'Element*IList<IList<'Element>*FormletTree<'Element>>
+    | Many      of 'Element*IReadOnlyList<IList<'Element>*FormletTree<'Element>>
     /// Modifies the layout recursively for this FormletTree
     | Layout    of FormletLayout*FormletTree<'Element>
     /// Joins two FormletTrees, this is typically the result of the Bind operation in the Formlet Monad

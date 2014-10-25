@@ -103,6 +103,8 @@ module Enhance =
                     let adorners= me.ChildCollection
                     me, adorners
 
+            let adapter = adorners :?> AdornersAdapter
+
             me.ChangeNotifier <- cl
 
             let c       = Array.zeroCreate adorners.Count
@@ -111,9 +113,8 @@ module Enhance =
             let count   = adorners.Count
             for i = 0 to count - 1 do
                 let ls, ift  = adorners.[i]
-                // TODO: Set nift
                 let ic, nift    = f.Evaluate (fc, cl, ift)
-                adorners.[i]    <- (ls, nift)
+                adapter.SetFormletTree (i, nift)
                 c.[i] <- ic.Value
                 fs.AddRange ic.Failures
 
